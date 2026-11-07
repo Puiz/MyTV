@@ -54,7 +54,7 @@ h2{font-size:20px;margin:22px 0 10px}
 <header><div class="logo">▶ MY TV</div><nav id="nav"></nav></header>
 <main id="main"></main>
 <div class="ov" id="modal"><div class="box" id="mc"></div></div>
-<div id="pl"><video id="v" controls autoplay playsinline></video><div id="bar"><button data-f data-act="pclose">✕ ปิด</button><button data-f data-act="pprev">⏮</button><button data-f data-act="pnext">⏭</button><b id="pt"></b></div><div id="perr"><div><p>เล่นวิดีโอไม่ได้ ลิงก์อาจเสียหรือเซิร์ฟเวอร์ไม่อนุญาต</p><p><button data-f data-act="pclose">กลับ</button></p></div></div></div>
+<div id="pl"><video id="v" controls autoplay playsinline></video><iframe id="ifr" allowfullscreen allow="autoplay; fullscreen; encrypted-media" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" style="display:none;width:100%;height:100%;border:0;background:#000"></iframe><div id="bar"><button data-f data-act="pclose">✕ ปิด</button><button data-f data-act="pprev">⏮</button><button data-f data-act="pnext">⏭</button><button data-f data-act="popen" id="popen" style="display:none">↗ เปิดในแท็บใหม่</button><b id="pt"></b></div><div id="perr"><div><p>เล่นวิดีโอไม่ได้ ลิงก์อาจเสียหรือเซิร์ฟเวอร์ไม่อนุญาต</p><p><button data-f data-act="pclose">กลับ</button></p></div></div></div>
 <div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),K='mytv.v1',CATS={movie:'หนัง',series:'ซีรีส์',anime:'อนิเมะ'},
@@ -88,7 +88,7 @@ function admin(){
  <div class="fg"><input id="f_title" data-f placeholder="ชื่อเรื่อง"><input id="f_year" data-f placeholder="ปี เช่น 2024" inputmode="numeric"><select id="f_cat" data-f>${Object.keys(CATS).map(c=>`<option value="${c}">${CATS[c]}</option>`).join('')}</select></div>
  <button data-f data-act="tmdb">ค้นหาและตรวจสอบจาก TMDB</button><div id="tm"></div>
  <input id="f_poster" data-f placeholder="ลิงก์โปสเตอร์"><input id="f_back" data-f placeholder="ลิงก์ภาพพื้นหลัง (ไม่บังคับ)"><textarea id="f_over" data-f placeholder="เรื่องย่อ"></textarea>
- <textarea id="f_src" data-f placeholder="ลิงก์วิดีโอ บรรทัดละ 1 รายการ รูปแบบ ชื่อ|ลิงก์ เช่น&#10;พากย์ไทย|https://example.com/a.m3u8&#10;ตอนที่ 1|https://example.com/ep1.mp4"></textarea>
+ <textarea id="f_src" data-f placeholder="ลิงก์วิดีโอ บรรทัดละ 1 รายการ รูปแบบ ชื่อ|ลิงก์ เช่น&#10;พากย์ไทย|https://example.com/a.m3u8&#10;ตอนที่ 1|https://example.com/ep1.mp4&#10;หน้าเว็บฝัง|embed:https://example.com/player"></textarea>
  <div class="btns"><button class="pri" data-f data-act="save">บันทึก</button><button data-f data-act="clear">ล้างฟอร์ม</button></div></div>
  <div class="pane"><h2>นำเข้าจากไฟล์ M3U</h2><p style="color:var(--mu)">นำเข้าเฉพาะลิงก์ที่คุณมีสิทธิ์ใช้งาน เช่น ไฟล์ของคุณเอง ช่องฟรี หรือบริการที่สมัครไว้</p>
  <select id="m_cat" data-f>${Object.keys(CATS).map(c=>`<option value="${c}">${CATS[c]}</option>`).join('')}</select><input type="file" id="m_file" data-f accept=".m3u,.m3u8,.txt"><textarea id="m_txt" data-f placeholder="หรือวางเนื้อหา M3U ที่นี่"></textarea><button data-f data-act="import">นำเข้า</button></div>
@@ -97,11 +97,11 @@ function admin(){
  <div class="btns"><button class="pri" data-f data-act="sset">บันทึกการตั้งค่า</button><button data-f data-act="export">ดาวน์โหลดสำรองข้อมูล</button><button data-f data-act="impjson">กู้คืนจากไฟล์สำรอง</button><button data-f data-act="lock">ออกจากหลังบ้าน</button></div><input type="file" id="j_file" accept=".json" hidden></div>`}
 function renderList(){const q=($('#flt')||{}).value||'',x=db.items.filter(i=>i.title.toLowerCase().includes(q.toLowerCase())).reverse(),L=$('#lst');
  L.innerHTML=x.slice(0,100).map(i=>`<div class="it"><span>${esc(i.title)} <small style="color:var(--mu)">${CATS[i.cat]} · ${i.sources.length} ลิงก์</small></span><span><button data-f data-edit="${esc(i.id)}">แก้ไข</button> <button data-f data-del="${esc(i.id)}">ลบ</button></span></div>`).join('')+(x.length>100?`<p style="color:var(--mu)">แสดง 100 จาก ${x.length} รายการ ใช้ช่องกรองเพื่อค้นหา</p>`:'')||'<p style="color:var(--mu)">ยังไม่มีรายการ</p>'}
-function setForm(it){if(!it)return;f_title.value=it.title;f_year.value=it.year||'';f_cat.value=it.cat;f_poster.value=it.poster||'';f_back.value=it.backdrop||'';f_over.value=it.overview||'';f_src.value=it.sources.map(s=>s.label+'|'+s.url).join('\n')}
+function setForm(it){if(!it)return;f_title.value=it.title;f_year.value=it.year||'';f_cat.value=it.cat;f_poster.value=it.poster||'';f_back.value=it.backdrop||'';f_over.value=it.overview||'';f_src.value=it.sources.map(s=>s.label+'|'+(s.embed?'embed:':'')+s.url).join('\n')}
 function saveItem(){const t=f_title.value.trim(),srcs=[];
  if(!t)return toast('ใส่ชื่อเรื่องก่อน');
- for(const l of f_src.value.split('\n')){const s=l.trim();if(!s)continue;const p=s.indexOf('|'),hasL=p>0&&!/^https?:/i.test(s.slice(0,p)),label=hasL?s.slice(0,p).trim():'เล่น',url=(hasL?s.slice(p+1):s).trim();
-  if(!/^https?:\/\/\S+$/i.test(url))return toast('ลิงก์ไม่ถูกต้อง: '+s.slice(0,40));srcs.push({label,url})}
+ for(const l of f_src.value.split('\n')){const s=l.trim();if(!s)continue;const p=s.indexOf('|'),hasL=p>0&&!/^https?:/i.test(s.slice(0,p)),label=hasL?s.slice(0,p).trim():'เล่น',raw=(hasL?s.slice(p+1):s).trim(),emb=/^embed:/i.test(raw),url=emb?raw.slice(6).trim():raw;
+  if(!/^https?:\/\/\S+$/i.test(url))return toast('ลิงก์ไม่ถูกต้อง: '+s.slice(0,40));srcs.push(emb?{label,url,embed:true}:{label,url})}
  if(!srcs.length)return toast('ใส่ลิงก์วิดีโออย่างน้อย 1 ลิงก์');
  const o={title:t,year:f_year.value.trim(),cat:f_cat.value,poster:f_poster.value.trim(),backdrop:f_back.value.trim(),overview:f_over.value.trim(),sources:srcs};
  if(editing)Object.assign(byId(editing),o);else db.items.push(Object.assign({id:uid()},o));
@@ -127,9 +127,10 @@ function detail(id){const it=byId(id);if(!it)return;const fav=db.list.includes(i
  ${it.sources.length>1?`<h3>${it.cat==='movie'?'เลือกเวอร์ชัน':'เลือกตอน'}</h3><div class="eps">${it.sources.map((s,i)=>`<button data-f data-play="${esc(id)}:${i}">${esc(s.label)}</button>`).join('')}</div>`:''}</div></div>`;
  $('#modal').classList.add('on');setTimeout(()=>{const b=$('#pbtn');b&&b.focus()},30)}
 function perr(){$('#perr').style.display='flex'}
-function stop(){const v=$('#v');if(hls){hls.destroy();hls=null}v.pause();v.removeAttribute('src');v.load()}
+function stop(){const fr=$('#ifr');fr.src='about:blank';fr.style.display='none';$('#popen').style.display='none';const v=$('#v');v.style.display='';if(hls){hls.destroy();hls=null}v.pause();v.removeAttribute('src');v.load()}
 function play(id,i){const it=byId(id);if(!it||!it.sources[i])return;cur={id,i};const s=it.sources[i],v=$('#v');stop();$('#perr').style.display='none';
  $('#pl').classList.add('on');$('#pt').textContent=it.title+' · '+s.label;document.activeElement.blur();
+ if(s.embed){v.style.display='none';$('#ifr').style.display='block';$('#ifr').src=s.url;$('#popen').style.display='';return}
  if(/\.m3u8/i.test(s.url)){if(v.canPlayType('application/vnd.apple.mpegurl'))v.src=s.url;else if(window.Hls&&Hls.isSupported()){hls=new Hls();hls.loadSource(s.url);hls.attachMedia(v);hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)perr()})}else return perr()}else v.src=s.url;
  v.play().catch(()=>{})}
 function step(d){if(!cur)return;const it=byId(cur.id),n=cur.i+d;if(it&&it.sources[n])play(cur.id,n);else toast(d>0?'ถึงรายการสุดท้ายแล้ว':'นี่คือรายการแรก')}
@@ -162,7 +163,7 @@ document.addEventListener('click',e=>{const t=e.target;if(t.id==='modal'){back()
   case'sset':db.settings.tmdb=s_tmdb.value.trim();db.settings.pin=s_pin.value.trim()||'1234';if(save())toast('บันทึกการตั้งค่าแล้ว');break;
   case'export':{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:'application/json'}));a.download='mytv-backup.json';a.click();break}
   case'impjson':j_file.click();break;
-  case'pclose':back();break;case'pprev':step(-1);break;case'pnext':step(1);break}});
+  case'popen':if(cur){const it=byId(cur.id),u=it&&it.sources[cur.i];u&&window.open(u.url,'_blank','noopener')}break;case'pclose':back();break;case'pprev':step(-1);break;case'pnext':step(1);break}});
 document.addEventListener('change',e=>{if(e.target.id==='j_file'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.items))throw 0;if(!confirm('แทนที่ข้อมูลปัจจุบันด้วยไฟล์สำรอง?'))return;localStorage.setItem(K,JSON.stringify(d));db=load();save();toast('กู้คืนแล้ว');render()}catch(x){toast('ไฟล์สำรองไม่ถูกต้อง')}};r.readAsText(f)}});
 document.addEventListener('input',e=>{if(e.target.id==='q'){const q=e.target.value.trim().toLowerCase(),x=q?db.items.filter(i=>i.title.toLowerCase().includes(q)):[];$('#res').innerHTML=x.length?x.map(card).join(''):(q?'<p style="color:var(--mu)">ไม่พบเรื่องที่ค้นหา</p>':'')}else if(e.target.id==='flt')renderList()});
 function cands(){const r=$('#pl').classList.contains('on')?$('#pl'):$('#modal').classList.contains('on')?$('#modal'):document;return[...r.querySelectorAll('[data-f]')].filter(e=>e.offsetParent!==null&&!e.disabled)}
