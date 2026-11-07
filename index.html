@@ -92,7 +92,7 @@ function admin(){
  <div class="btns"><button class="pri" data-f data-act="save">บันทึก</button><button data-f data-act="clear">ล้างฟอร์ม</button></div></div>
  <div class="pane"><h2>นำเข้าจากไฟล์ M3U</h2><p style="color:var(--mu)">นำเข้าเฉพาะลิงก์ที่คุณมีสิทธิ์ใช้งาน เช่น ไฟล์ของคุณเอง ช่องฟรี หรือบริการที่สมัครไว้</p>
  <select id="m_cat" data-f>${Object.keys(CATS).map(c=>`<option value="${c}">${CATS[c]}</option>`).join('')}</select><input type="file" id="m_file" data-f accept=".m3u,.m3u8,.txt"><textarea id="m_txt" data-f placeholder="หรือวางเนื้อหา M3U ที่นี่"></textarea><button data-f data-act="import">นำเข้า</button></div>
- <div class="pane"><h2>รายการทั้งหมด (${db.items.length})</h2><input id="flt" data-f placeholder="กรองตามชื่อ"><div id="lst"></div></div>
+ <div class="pane"><h2>รายการทั้งหมด (${db.items.length})</h2><input id="flt" data-f placeholder="กรองตามชื่อ"><div class="btns"><select id="d_cat" data-f style="width:auto"><option value="all">ทุกหมวด</option>${Object.keys(CATS).map(c=>`<option value="${c}">${CATS[c]}</option>`).join('')}</select><button data-f data-act="delall">ลบทั้งหมดตามหมวดที่เลือก</button></div><div id="lst"></div></div>
  <div class="pane"><h2>ตั้งค่าและสำรองข้อมูล</h2><input id="s_tmdb" data-f placeholder="TMDB API Key (สมัครฟรีที่ themoviedb.org)" value="${esc(db.settings.tmdb)}"><input id="s_pin" data-f placeholder="PIN ใหม่" value="${esc(db.settings.pin)}">
  <div class="btns"><button class="pri" data-f data-act="sset">บันทึกการตั้งค่า</button><button data-f data-act="export">ดาวน์โหลดสำรองข้อมูล</button><button data-f data-act="impjson">กู้คืนจากไฟล์สำรอง</button><button data-f data-act="lock">ออกจากหลังบ้าน</button></div><input type="file" id="j_file" accept=".json" hidden></div>`}
 function renderList(){const q=($('#flt')||{}).value||'',x=db.items.filter(i=>i.title.toLowerCase().includes(q.toLowerCase())).reverse(),L=$('#lst');
@@ -149,6 +149,12 @@ document.addEventListener('click',e=>{const t=e.target;if(t.id==='modal'){back()
  else if(d.del){const it=byId(d.del);if(it&&confirm('ลบ “'+it.title+'” ?')){db.items=db.items.filter(i=>i.id!==d.del);db.list=db.list.filter(i=>i!==d.del);if(editing===d.del)editing=null;save();render()}}
  else switch(d.act){
   case'unlock':if($('#pin').value===db.settings.pin){unlocked=true;render()}else toast('PIN ไม่ถูกต้อง');break;
+  case'delall':{const c=d_cat.value,x=db.items.filter(i=>c==='all'||i.cat===c),nm=c==='all'?'ทุกหมวด':CATS[c];
+   if(!x.length){toast('ไม่มีรายการให้ลบ');break}
+   if(!confirm('ลบ '+x.length+' รายการในหมวด "'+nm+'" ?\nการลบนี้ย้อนกลับไม่ได้ (แนะนำให้ดาวน์โหลดสำรองข้อมูลก่อน)'))break;
+   if(c==='all'&&!confirm('ยืนยันอีกครั้ง: ลบทุกรายการในแอป?'))break;
+   const ids=new Set(x.map(i=>i.id));db.items=db.items.filter(i=>!ids.has(i.id));db.list=db.list.filter(i=>!ids.has(i));if(ids.has(editing))editing=null;
+   if(save())toast('ลบแล้ว '+x.length+' รายการ');render();break}
   case'lock':unlocked=false;editing=null;render();break;
   case'save':saveItem();break;case'clear':editing=null;render();break;case'tmdb':tmdb();break;
   case'import':{const go=txt=>{const n=importM3U(txt,m_cat.value);save();toast(n?'นำเข้า '+n+' รายการ':'ไม่พบลิงก์ที่นำเข้าได้');render()},f=m_file.files[0];
